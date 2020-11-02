@@ -26,6 +26,7 @@ pragma solidity ^0.6.7;
 pragma experimental ABIEncoderV2;
 
 import "./common/Input.sol";
+// import "./common/Blake2b.sol";
 
 
 /**
@@ -34,22 +35,13 @@ import "./common/Input.sol";
  contract MerkleProof {
 
 	using Input for Input.Data;
+	// using Blake2b for Blake2b.Instance;
     /**
      * @dev Returns true if a `leaf` can be proved to be a part of a Merkle tree
      * defined by `root`. For this, a `proof` must be provided, containing
      * sibling hashes on the branch from the leaf to the root of the tree. Each
      * pair of leaves and each pair of pre-images are assumed to be sorted.
      */
-
-// root: [54, 213, 146, 38, 220, 249, 129, 152, 176, 114, 7, 238, 21, 78, 190, 162, 70, 166, 135, 216, 193, 17, 145, 243, 91, 71, 94, 122, 99, 249, 229, 180]
-// proof: [[68, 100, 111, 0]]
-// items: [([100, 111], Some([118, 101, 114, 98]))]
-
-// const EMPTY_TRIE_NO_EXT: u8 = 0;
-// const NIBBLE_SIZE_BOUND_NO_EXT: usize = u16::max_value() as usize;
-// const LEAF_PREFIX_MASK_NO_EXT: u8 = 0b_01 << 6;
-// const BRANCH_WITHOUT_MASK_NO_EXT: u8 = 0b_10 << 6;
-// const BRANCH_WITH_MASK_NO_EXT: u8 = 0b_11 << 6;
 
 	uint8 internal constant NODEKIND_NOEXT_LEAF  = 1;
 	uint8 internal constant NODEKIND_NOEXT_BRANCH_NOVALUE = 2;
@@ -62,13 +54,13 @@ import "./common/Input.sol";
 	}
 
 	struct Branch {
-		bytes key; //parialkey
+		bytes key; //partialkey
 		NodeHandle[16] children;
 		bytes value;
 	}
 
 	struct Leaf {
-		bytes key; //parialkey
+		bytes key; //partialkey
 		bytes value;
 	} 
 
@@ -84,6 +76,11 @@ import "./common/Input.sol";
 
 	struct ProofIter {
 		Input.Data[] proof;
+		uint256 offset;
+	}
+
+	struct ItemsIter {
+		Item[] items;
 		uint256 offset;
 	}
 
@@ -105,101 +102,36 @@ import "./common/Input.sol";
 		UnwindStack
 	}
 
-	function testPairsVerifyProof() public pure {
-		bytes32 root = hex"493825321d9ad0c473bbf85e1a08c742b4a0b75414f890745368b8953b873017";
-		bytes[] memory proof = new bytes[](5); 
-		proof[0] =  hex"810616010018487261766f00007c8306f7240030447365207374616c6c696f6e30447365206275696c64696e67";
-		proof[1] =  hex"466c6661800000000000000000000000000000000000000000000000000000000000000000";
-		proof[2] =  hex"826f400000";
-		proof[3] =  hex"8107400000";
-		proof[4] =  hex"410500";
-
-		Input.Data[] memory proofData = new Input.Data[](proof.length);
-		for (uint i=0; i<proof.length; i++) {
-			proofData[i] = Input.from(proof[i]);
-		}
-		Item[] memory items = new Item[](8);
-		items[0] = Item({
-			key: hex"646f",
-			value: hex"76657262"
-		});
-		items[1] = Item({
-			key: hex"646f67",
-			value: hex"7075707079"
-		});
-		items[2] = Item({
-			key: hex"646f6765",
-			value: hex"0000000000000000000000000000000000000000000000000000000000000000"
-		});
-		items[3] = Item({
-			key: hex"627261766f",
-			value: hex"627261766f"
-		});
-		items[4] = Item({
-			key: hex"616c6661626574",
-			value: hex""
-		});
-		items[5] = Item({
-			key: hex"64",
-			value: hex""
-		});
-		items[6] = Item({
-			key: hex"646f10",
-			value: hex""
-		});
-		items[7] = Item({
-			key: hex"68616c70",
-			value: hex""
-		});
-		assert(verify_proof(root, proofData, items) == true);
-	}
-
-	function testPairVerifyProof() public pure {
-		bytes[] memory proof = new bytes[](3); 
-		proof[0] =  hex"c4646f4000107665726200";
-		proof[1] =  hex"c107400014707570707900";
-		proof[2] =  hex"410500";
-
-		bytes32 root = hex"e24f300814d2ddbb2a6ba465cdc2d31004aee7741d0a4964b879f25053b2ed48";
-		bytes memory key = hex"646f6765";
-		bytes memory value = hex"0000000000000000000000000000000000000000000000000000000000000000";
-		Input.Data[] memory proofData = new Input.Data[](proof.length);
-		for (uint i=0; i<proof.length; i++) {
-			proofData[i] = Input.from(proof[i]);
-		}
-		Item[] memory items = new Item[](1);
-		items[0] = Item({
-			key: key,
-			value: value
-		});
-		assert(verify_proof(root, proofData, items) == true);
+	function Hash(bytes memory src) internal pure returns (bytes memory des) {
+		return Input.toBytes(keccak256(src));
+		// Blake2b.Instance memory instance = Blake2b.init(hex"", 32);
+		// return instance.finalize(input);
 	}
 
 	function verify(bytes32 root, bytes[] memory proof, bytes[] memory keys, bytes[] memory values) public pure returns (bool) {
 		require(proof.length > 0, "no proof");
 		require(keys.length > 0, "no keys");
 		require(keys.length == values.length, "invalid pair");
-		Input.Data[] memory merkleProof;
-		for (uint256 i=0; i<proof.length; i++) {
-			merkleProof[i] = Input.from(proof[i]);
+		Input.Data[] memory proofData = new Input.Data[](proof.length);
+		for (uint i=0; i<proof.length; i++) {
+			proofData[i] = Input.from(proof[i]);
 		}
-		Item[] memory items;
+		Item[] memory items = new Item[](keys.length);
 		for (uint256 i=0; i<keys.length; i++) {
 			items[i] = Item({
 				key: keys[i],
 				value: values[i]
 			});
 		}
-		return verify_proof(root, merkleProof, items);
+		return verify_proof(root, proofData, items);
 	}
 
 	//bytes32 root, bytes memory key, bytes memory value 
-    function verify_proof(bytes32 root, Input.Data[] memory proof, Item[] memory items) public pure returns (bool) {
+    function verify_proof(bytes32 root, Input.Data[] memory proof, Item[] memory items) internal pure returns (bool) {
 		//TODO:: Sort and deduplicate items? 
-		require(items.length > 0, "no item");
 		require(proof.length > 0, "no proof");
 		//TODO:: OPT
-		uint256 maxDepth = 32;
+		uint256 maxDepth = proof.length;
 		StackEntry[] memory stack = new StackEntry[](maxDepth);
 		uint256 stackLen = 0;
 		Input.Data memory rootNode = proof[0];
@@ -208,38 +140,45 @@ import "./common/Input.sol";
 			proof: proof,
 			offset: 1
 		});
+		ItemsIter memory itemsIter = ItemsIter({
+			items: items,
+			offset: 0
+		});
 		while (true) {
 			Step step;
 			bytes memory childPrefix;
-			(step, childPrefix) = advanceItem(lastEntry, items);
+			(step, childPrefix) = advanceItem(lastEntry, itemsIter);
 			if (step == Step.Descend) {
 				StackEntry memory nextEntry = advanceChildIndex(lastEntry, childPrefix, proofIter);
 				stack[stackLen] = lastEntry;
 				stackLen++;
 				lastEntry = nextEntry;
 			} else if (step == Step.UnwindStack) {
-				bool isInline = lastEntry.isInline;
-				bytes memory nodeData = encodeNode(lastEntry);
 				bytes memory childRef;
-				if (isInline) {
-					require(nodeData.length <= 32, "invalid child reference");
-					childRef = nodeData;	
-				} else {
-					childRef = Hash(nodeData);
-				}
-
-				if (stackLen > 0) {
-					lastEntry = stack[stackLen-1];
-					stackLen--;
-					lastEntry.children[lastEntry.childIndex].data = childRef;		
-				} else {
-					require(proofIter.offset == proofIter.proof.length, "exraneous proof");
-					require(childRef.length == 32, "root hash length should be 32");
-					bytes32 computedRoot = abi.decode(childRef, (bytes32));
-					if (computedRoot != root) {
-						return false;
+				{
+					bool isInline = lastEntry.isInline;
+					bytes memory nodeData = encodeNode(lastEntry);
+					if (isInline) {
+						require(nodeData.length <= 32, "invalid child reference");
+						childRef = nodeData;	
+					} else {
+						childRef = Hash(nodeData);
 					}
-					break;
+				}
+				{
+					if (stackLen > 0) {
+						lastEntry = stack[stackLen-1];
+						stackLen--;
+						lastEntry.children[lastEntry.childIndex].data = childRef;		
+					} else {
+						require(proofIter.offset == proofIter.proof.length, "exraneous proof");
+						require(childRef.length == 32, "root hash length should be 32");
+						bytes32 computedRoot = abi.decode(childRef, (bytes32));
+						if (computedRoot != root) {
+							return false;
+						}
+						break;
+					}
 				}
 			}
 		}
@@ -251,7 +190,7 @@ import "./common/Input.sol";
 			require(childPrefix.length > 0, "this is a branch");
 			entry.childIndex = uint8(childPrefix[childPrefix.length - 1]);
 			NodeHandle memory child = entry.children[entry.childIndex];
-			makeChildEntry(proofIter, child, childPrefix);
+			return makeChildEntry(proofIter, child, childPrefix);
 		} else {
 			revert("cannot have children");
 		}
@@ -274,40 +213,39 @@ import "./common/Input.sol";
 		}
 	}
 
-	function advanceItem(StackEntry memory entry, Item[] memory items) internal pure returns (Step, bytes memory childPrefix) {
-		uint256 offset = 0;
-		while (true) {
-			if (offset < items.length) {
-				Item memory item = items[offset];
-				bytes memory k = keyToNibbles(item.key);
-				bytes memory v = item.value;
-				uint256 lenCommon = lenCommonPrefix(k, entry.prefix);	
-				if (lenCommon > 0 || entry.prefix.length == 0) {
-					ValueMatch vm;
-					(vm, childPrefix) = matchKeyToNode(k, lenCommon, entry);
-					if (ValueMatch.MatchesLeaf == vm) {
-						if (v.length == 0) {
-							revert("value mismatch");
-						}  
-						entry.value = v;
-					} else if (ValueMatch.MatchesBranch == vm) {
-						entry.value = v;
-					} else if (ValueMatch.NotFound == vm) {
-						if (v.length > 0) {
-							revert("value mismatch");
-						} 
-					} else if (ValueMatch.NotOmitted == vm) {
-						revert("extraneouts value");
-					} else if (ValueMatch.IsChild == vm) {
-						return (Step.Descend, childPrefix);
-					}
-
-					offset++;
-					continue;
+	function advanceItem(StackEntry memory entry, ItemsIter memory itemsIter) internal pure returns (Step, bytes memory childPrefix) {
+		//TODO: check logic
+		while (itemsIter.offset < itemsIter.items.length) {
+			Item memory item = itemsIter.items[itemsIter.offset];
+			bytes memory k = keyToNibbles(item.key);
+			bytes memory v = item.value;
+			uint256 lenCommon = lenCommonPrefix(k, entry.prefix);	
+			if (lenCommon > 0 || entry.prefix.length == 0) {
+				ValueMatch vm;
+				(vm, childPrefix) = matchKeyToNode(k, lenCommon, entry);
+				if (ValueMatch.MatchesLeaf == vm) {
+					if (v.length == 0) {
+						revert("value mismatch");
+					}  
+					entry.value = v;
+				} else if (ValueMatch.MatchesBranch == vm) {
+					entry.value = v;
+				} else if (ValueMatch.NotFound == vm) {
+					if (v.length > 0) {
+						revert("value mismatch");
+					} 
+				} else if (ValueMatch.NotOmitted == vm) {
+					revert("extraneouts value");
+				} else if (ValueMatch.IsChild == vm) {
+					return (Step.Descend, childPrefix);
 				}
+				itemsIter.offset++;
+				continue;
+			} else {
+				revert("invalid key");
 			}
-			return (Step.Descend, childPrefix);
 		}
+		return (Step.UnwindStack, childPrefix);
 	}
 
 	function matchKeyToNode(bytes memory k, uint256 lenCommon, StackEntry memory entry) internal pure returns (ValueMatch vm, bytes memory childPrefix) {
@@ -407,24 +345,11 @@ import "./common/Input.sol";
 		}
 	}
 
-	function test_decode_leaf(bytes memory proof) public pure returns (Leaf memory) {
-		Input.Data memory data = Input.from(proof);
-		uint8 header = data.decodeU8();
-		Leaf memory l = decodeLeaf(data, header);
-		return l;
-	}   
-
-	function test_decode_branch(bytes memory proof) public pure returns (Branch memory) {
-		Input.Data memory data = Input.from(proof);
-		uint8 header = data.decodeU8();
-		Branch memory b = decodeBranch(data, header);
-		return b;
-	}   
 
 	function encodeBranch(Branch memory b) internal pure returns (bytes memory encoding) {
 		encoding = encodeBranchHeader(b);
 		encoding = abi.encodePacked(encoding, nibblesToKeyLE(b.key));
-		encoding = abi.encodePacked(encoding, childrenBitmap(b));
+		encoding = abi.encodePacked(encoding, u16ToBytes(childrenBitmap(b)));
 		if (b.value.length != 0) {
 			bytes memory encValue;
 			(encValue,) = scaleEncodeByteArray(b.value);
@@ -433,10 +358,10 @@ import "./common/Input.sol";
 		for (uint8 i=0; i < 16; i++) {
 			if (b.children[i].exist) {
 				//TODO::encode data
-				// require(b.children[i].data.length == 0, "children hash first");
 				bytes memory childData = b.children[i].data;	
+				require(childData.length > 0, "miss child data");
 				bytes memory hash;
-				if (childData.length < 32) {
+				if (childData.length <= 32) {
 					hash = childData;
 				} else {
 					hash = Hash(childData);	
@@ -449,8 +374,11 @@ import "./common/Input.sol";
 		return encoding;
 	}
 
-	function Hash(bytes memory src) internal pure returns (bytes memory des) {
-		return Input.toBytes(keccak256(src));
+	// u16ToBytes converts a uint16 into a 2-byte slice
+	function u16ToBytes(uint16 src) internal pure returns (bytes memory des) {
+		des = new bytes(2);
+		des[0] = byte(uint8(src & 0x00FF));
+		des[1] = byte(uint8(src >> 8 & 0x00FF));
 	}
 
 	function encodeLeaf(Leaf memory l) internal pure returns (bytes memory encoding) {
@@ -492,7 +420,7 @@ import "./common/Input.sol";
 	}
 
 	function encodeLeafHeader(Leaf memory l) internal pure returns (bytes memory leafHeader) {
-		uint8 header;
+		uint8 header = 1 << 6;
 		uint256 pkLen = l.key.length;
 		bytes memory encPkLen;
 		if (pkLen >= 63) {
@@ -541,12 +469,6 @@ import "./common/Input.sol";
 					isInline: isInline,
 					exist: true
 				});
-				//TODO: blake2b output length
-				// if (count == 32) {
-				// 	// hash
-				// } else {
-				// 	// Inline
-				// }			
 			}
 		}
 		return b;
