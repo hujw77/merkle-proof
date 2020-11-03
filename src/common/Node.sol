@@ -31,6 +31,7 @@ library Node {
         bytes value;
     }
 
+    // decodeBranch decodes a byte array into a branch node
     function decodeBranch(Input.Data memory data, uint8 header)
         internal
         pure
@@ -63,6 +64,7 @@ library Node {
         return b;
     }
 
+    // decodeLeaf decodes a byte array into a leaf node
     function decodeLeaf(Input.Data memory data, uint8 header)
         internal
         pure
@@ -103,6 +105,7 @@ library Node {
         return key;
     }
 
+    // encodeBranch encodes a branch
     function encodeBranch(Branch memory b)
         internal
         view
@@ -135,6 +138,7 @@ library Node {
         return encoding;
     }
 
+    // encodeLeaf encodes a leaf
     function encodeLeaf(Leaf memory l)
         internal
         pure

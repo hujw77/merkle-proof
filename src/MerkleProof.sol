@@ -68,7 +68,7 @@ contract MerkleProof {
     enum Step {Descend, UnwindStack}
 
     /**
-     * @dev Returns true if a `leaf` can be proved to be a part of a Merkle tree
+     * @dev Returns true if `keys ans values` can be proved to be a part of a Merkle tree
      * defined by `root`. For this, a `proof` must be provided, containing
      * sibling hashes on the branch from the leaf to the root of the tree. Each
      * pair of leaves and each pair of pre-images are assumed to be sorted.
@@ -89,7 +89,6 @@ contract MerkleProof {
         return verify_proof(root, proof, items);
     }
 
-    //bytes32 root, bytes memory key, bytes memory value
     function verify_proof(
         bytes32 root,
         bytes[] memory proof,
@@ -304,7 +303,6 @@ contract MerkleProof {
         return true;
     }
 
-    // startsWith returns the length of the common prefix between two keys
     function startsWith(bytes memory a, bytes memory b)
         internal
         pure
@@ -321,6 +319,13 @@ contract MerkleProof {
         return true;
     }
 
+    /**
+     * @dev Encode a Node.
+     *      encoding has the following format:
+     *      NodeHeader | Extra partial key length | Partial Key | Value
+     * @param entry The stackEntry.
+     * @return The encoded branch.
+     */
     function encodeNode(StackEntry memory entry)
         internal
         view
@@ -347,6 +352,15 @@ contract MerkleProof {
         }
     }
 
+    /**
+     * @dev Decode a Node.
+     *      encoding has the following format:
+     *      NodeHeader | Extra partial key length | Partial Key | Value
+     * @param nodeData The encoded trie node data.
+     * @param prefix The nibble path to the node.
+     * @param isInine The node is an in-line node or not.
+     * @return The stackEntry.
+     */
     function decodeNode(
         bytes memory nodeData,
         bytes memory prefix,
