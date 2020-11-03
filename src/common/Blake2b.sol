@@ -22,14 +22,14 @@ library Blake2b {
         // - f: 8-bit
         bytes state;
         // Expected output hash length. (Used in `finalize`.)
-        uint out_len;
+        uint256 out_len;
         // Data passed to "function F".
         // NOTE: this is limited to 24 bits.
-        uint input_counter;
+        uint256 input_counter;
     }
 
     // Initialise the state with a given `key` and required `out_len` hash length.
-    function init(bytes memory key, uint out_len)
+    function init(bytes memory key, uint256 out_len)
         internal
         view
         returns (Instance memory instance)
@@ -44,10 +44,11 @@ library Blake2b {
     }
 
     // Initialise the state with a given `key` and required `out_len` hash length.
-    function reset(Instance memory instance, bytes memory key, uint out_len)
-        internal
-        view
-    {
+    function reset(
+        Instance memory instance,
+        bytes memory key,
+        uint256 out_len
+    ) internal view {
         instance.out_len = out_len;
         instance.input_counter = 0;
 
@@ -55,11 +56,12 @@ library Blake2b {
         // It is byteswapped for the encoding requirements, additionally
         // the IV has the initial parameter block 0 XOR constant applied, but
         // not the key and output length.
-        instance.state = hex"0000000c08c9bdf267e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+        instance
+            .state = hex"0000000c08c9bdf267e6096a3ba7ca8485ae67bb2bf894fe72f36e3cf1361d5f3af54fa5d182e6ad7f520e511f6c3e2b8c68059b6bbd41fbabd9831f79217e1319cde05b00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
         bytes memory state = instance.state;
 
         // Update parameter block 0 with key length and output length.
-        uint key_len = key.length;
+        uint256 key_len = key.length;
         assembly {
             let ptr := add(state, 36)
             let tmp := mload(ptr)
@@ -81,14 +83,20 @@ library Blake2b {
     // This calls the blake2 precompile ("function F of the spec").
     // It expects the state was updated with the next block. Upon returning the state will be updated,
     // but the supplied block data will not be cleared.
-    function call_function_f(Instance memory instance)
-        private
-        view
-    {
+    function call_function_f(Instance memory instance) private view {
         bytes memory state = instance.state;
         assembly {
             let state_ptr := add(state, 32)
-            if iszero(staticcall(not(0), 0x09, state_ptr, 0xd5, add(state_ptr, 4), 0x40)) {
+            if iszero(
+                staticcall(
+                    not(0),
+                    0x09,
+                    state_ptr,
+                    0xd5,
+                    add(state_ptr, 4),
+                    0x40
+                )
+            ) {
                 revert(0, 0)
             }
         }
@@ -97,15 +105,17 @@ library Blake2b {
     // This function will split blocks correctly and repeatedly call the precompile.
     // NOTE: this is dumb right now and expects `data` to be 128 bytes long and padded with zeroes,
     //       hence the real length is indicated with `data_len`
-    function update_loop(Instance memory instance, bytes memory data, uint data_len, bool last_block)
-        private
-        view
-    {
+    function update_loop(
+        Instance memory instance,
+        bytes memory data,
+        uint256 data_len,
+        bool last_block
+    ) private view {
         bytes memory state = instance.state;
-        uint input_counter = instance.input_counter;
+        uint256 input_counter = instance.input_counter;
 
         // This is the memory location where the "data block" starts for the precompile.
-        uint state_ptr;
+        uint256 state_ptr;
         assembly {
             // The `rounds` field is 4 bytes long and the `h` field is 64-bytes long.
             // Also adjust for the size of the bytes type.
@@ -113,12 +123,12 @@ library Blake2b {
         }
 
         // This is the memory location where the input data resides.
-        uint data_ptr;
+        uint256 data_ptr;
         assembly {
             data_ptr := add(data, 32)
         }
 
-        uint len = data.length;
+        uint256 len = data.length;
         while (len > 0) {
             if (len >= 128) {
                 assembly {
@@ -173,10 +183,11 @@ library Blake2b {
 
     // Update the state with a non-final block.
     // NOTE: the input must be complete blocks.
-    function update(Instance memory instance, bytes memory data, uint data_len)
-        internal
-        view
-    {
+    function update(
+        Instance memory instance,
+        bytes memory data,
+        uint256 data_len
+    ) internal view {
         require((data.length % 128) == 0);
         update_loop(instance, data, data_len, false);
     }
@@ -188,7 +199,7 @@ library Blake2b {
         returns (bytes memory output)
     {
         // FIXME: support incomplete blocks (zero pad them)
-        uint input_length = data.length;
+        uint256 input_length = data.length;
         if (input_length == 0 || (input_length % 128) != 0) {
             data = concat(data, new bytes(128 - (input_length % 128)));
         }
@@ -200,7 +211,7 @@ library Blake2b {
 
         bytes memory state = instance.state;
         output = new bytes(instance.out_len);
-        if(instance.out_len == 32) {
+        if (instance.out_len == 32) {
             assembly {
                 mstore(add(output, 32), mload(add(state, 36)))
             }
@@ -212,10 +223,7 @@ library Blake2b {
         }
     }
 
-    function concat(
-        bytes memory _preBytes,
-        bytes memory _postBytes
-    )
+    function concat(bytes memory _preBytes, bytes memory _postBytes)
         internal
         pure
         returns (bytes memory)
@@ -281,13 +289,15 @@ library Blake2b {
             // next 32 byte block, then round down to the nearest multiple of
             // 32. If the sum of the length of the two arrays is zero then add
             // one before rounding down to leave a blank 32 bytes (the length block with 0).
-            mstore(0x40, and(
-              add(add(end, iszero(add(length, mload(_preBytes)))), 31),
-              not(31) // Round down to the nearest 32 bytes.
-            ))
+            mstore(
+                0x40,
+                and(
+                    add(add(end, iszero(add(length, mload(_preBytes)))), 31),
+                    not(31) // Round down to the nearest 32 bytes.
+                )
+            )
         }
 
         return tempBytes;
     }
-
 }
