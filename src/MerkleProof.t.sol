@@ -16,10 +16,8 @@ contract MerkleProofTest is MerkleProof, DSTest {
         assertTrue(true);
     }
 
-    function testSimplePairVerifyProof() public {
-
-            bytes32 root
-         = hex"36d59226dcf98198b07207ee154ebea246a687d8c11191f35b475e7a63f9e5b4";
+    function testSimplePairVerifyProof() public returns (bool) {
+        bytes32 root = hex"36d59226dcf98198b07207ee154ebea246a687d8c11191f35b475e7a63f9e5b4";
         bytes[] memory proof = new bytes[](1);
         proof[0] = hex"44646f00";
         bytes[] memory keys = new bytes[](1);
@@ -28,12 +26,11 @@ contract MerkleProofTest is MerkleProof, DSTest {
         values[0] = hex"76657262";
         bool res = verify(root, proof, keys, values);
         assertTrue(res);
+		return res;
     }
 
-    function testPairVerifyProof() public {
-
-            bytes32 root
-         = hex"e24f300814d2ddbb2a6ba465cdc2d31004aee7741d0a4964b879f25053b2ed48";
+    function testPairVerifyProof() public returns (bool) {
+        bytes32 root = hex"e24f300814d2ddbb2a6ba465cdc2d31004aee7741d0a4964b879f25053b2ed48";
         bytes[] memory merkleProof = new bytes[](3);
         merkleProof[0] = hex"c4646f4000107665726200";
         merkleProof[1] = hex"c107400014707570707900";
@@ -45,12 +42,11 @@ contract MerkleProofTest is MerkleProof, DSTest {
         values[0] = hex"0000000000000000000000000000000000000000000000000000000000000000";
         bool res = verify(root, merkleProof, keys, values);
         assertTrue(res);
+		return res;
     }
 
-    function testPairsVerifyProofBlake2b() public {
-
-            bytes32 root
-         = hex"8b5b6ad240751b4af62bf0e939731564bfb41b9bfbe01e32e00154eae31cfe43";
+    function testPairsVerifyProofBlake2b() public returns (bool) {
+		bytes32 root = hex"8b5b6ad240751b4af62bf0e939731564bfb41b9bfbe01e32e00154eae31cfe43";
         bytes[] memory merkleProof = new bytes[](1);
         merkleProof[0] = hex"810006000c420200144203080405";
 
@@ -60,12 +56,11 @@ contract MerkleProofTest is MerkleProof, DSTest {
         values[0] = hex"01";
         bool res = verify(root, merkleProof, keys, values);
         assertTrue(res);
+		return res;
     }
 
-    function testPairVerifyProofBlake2b() public {
-
-            bytes32 root
-         = hex"2a6b9a056f6336ab2417eedcc455a18abd01517c0a4a9adb958699eed84d8b4b";
+    function testPairVerifyProofBlake2b() public returns (bool) {
+        bytes32 root = hex"2a6b9a056f6336ab2417eedcc455a18abd01517c0a4a9adb958699eed84d8b4b";
         bytes[] memory merkleProof = new bytes[](4);
         merkleProof[0] = hex"80490c80b0eadd9230e584b47e00b7cf8e1f927cee0d50485a3c676a11b384ead2bf36ee80bc95ec1b2225e13c653524cb1ff8714173c780ef580581ff66c9604e7fb536c380fda12eddcd0a2e270526fc0037de9da9dcda5c99049e1f74a520c5cbd85db96b8064d657470e1a79e65884b81f1085d11308fd3182d566ffe2b419413ce0495e1980a60aa390511c25e70c1b029d951ef2fd0255b8a3fc3580bed4c4b2fa31789781";
         merkleProof[1] = hex"80fffb80fbd313c51ce7764956f81ef87ff3ebc489b3232cfed8fef9a8434b7414d6f7c880760034d4c3469cab2f0c3c5417980460d295fd8b49cff262a4afb8290c38a57b80150154959b53b033e56db6cb65aa2fedca9dd0071f25eae7ba262841eaf0dbbd807adb48ce7c7686a6b1f726eca635aecf163fcb1ec47f7cacec194be9f340d7b1805c72f25b1b6304d16667e2766fa1a906cb081788eb4502787df7c3597412b17b802d39230527f49cf88fbdd4bf7e3dbcd564218ea2c20751ee4e4e24ecb44989a5800eb754c27d6302344f80fc4f785eae09c7c6acf58ee0ebddbd2f1755eb37a7de806246fab7082d42447ff6a3e4653cb8c2427408eae98af0c40f9c636b972f91548034260342013b628b1a3409a53683bd72866b974fc4bb1e2db0b50c4abd88df0680468f4c745f210c713c8eee6d4bc90e15ac9e708974088d1bf5e01db7fc0781bb809d5adec17d1f91d73f0a631ffe17af9dae7007f69f11bc4d46ca2b9777a921688090e4fe33f4b3a304329c97d1ee3cb8240585cd8c4a1da47f79423a1d91dd1d7180a7a88069a098bb5725ce52c5cf702bed3b1f6f134a69f585d43ab497995fd35280cbcdf9de3ff34d475ef3dad95c4217e6ee4a1e40897550291620d88e1a77c2bd806440a709fcb73133283c13668a87da24982f6b61060d169deb5a43532b553318";
@@ -78,12 +73,11 @@ contract MerkleProofTest is MerkleProof, DSTest {
         values[0] = hex"240000000000000080e36a09000000000200000001000000000000000000000000000200000002000000000000ca9a3b00000000020000000300000000030e017b1e76c223d1fa5972b6e3706100bb8ddffb0aeafaf0200822520118a87e00000300000003000e017b1e76c223d1fa5972b6e3706100bb8ddffb0aeafaf0200822520118a87ef0a4b9550b000000000000000000000000000300000003020d584a4cbbfd9a4878d816512894e65918e54fae13df39a6f520fc90caea2fb00e017b1e76c223d1fa5972b6e3706100bb8ddffb0aeafaf0200822520118a87ef0a4b9550b00000000000000000000000000030000000e060017640700000000000000000000000000000300000003045a9ae1e0730536617c67ca727de00d4d197eb6afa03ac0b4ecaa097eb87813d6c005d9010000000000000000000000000000030000000000c0769f0b00000000000000";
         bool res = verify(root, merkleProof, keys, values);
         assertTrue(res);
+		return res;
     }
 
-    function testPairsVerifyProof() public {
-
-            bytes32 root
-         = hex"493825321d9ad0c473bbf85e1a08c742b4a0b75414f890745368b8953b873017";
+    function testPairsVerifyProof() public returns (bool) {
+        bytes32 root = hex"493825321d9ad0c473bbf85e1a08c742b4a0b75414f890745368b8953b873017";
         bytes[] memory merkleProof = new bytes[](5);
         merkleProof[0] = hex"810616010018487261766f00007c8306f7240030447365207374616c6c696f6e30447365206275696c64696e67";
         merkleProof[1] = hex"466c6661800000000000000000000000000000000000000000000000000000000000000000";
@@ -113,6 +107,7 @@ contract MerkleProofTest is MerkleProof, DSTest {
         values[7] = hex"";
         bool res = verify(root, merkleProof, keys, values);
         assertTrue(res);
+		return res;
     }
 
     function test_decode_leaf() public {

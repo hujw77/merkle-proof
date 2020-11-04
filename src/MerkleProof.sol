@@ -363,7 +363,7 @@ contract MerkleProof {
      * @param nodeData The encoded trie node data.
      * @param prefix The nibble path to the node.
      * @param isInline The node is an in-line node or not.
-     * @return The stackEntry.
+     * @return entry The StackEntry.
      */
     function decodeNode(
         bytes memory nodeData,
