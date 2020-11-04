@@ -10,9 +10,9 @@ library Node {
     using Input for Input.Data;
     using Bytes for bytes;
 
-    uint8 internal constant NODEKIND_NOEXT_LEAF = 1;
-    uint8 internal constant NODEKIND_NOEXT_BRANCH_NOVALUE = 2;
-    uint8 internal constant NODEKIND_NOEXT_BRANCH_WITHVALUE = 3;
+    uint8 public constant NODEKIND_NOEXT_LEAF = 1;
+    uint8 public constant NODEKIND_NOEXT_BRANCH_NOVALUE = 2;
+    uint8 public constant NODEKIND_NOEXT_BRANCH_WITHVALUE = 3;
 
     struct NodeHandle {
         bytes data;

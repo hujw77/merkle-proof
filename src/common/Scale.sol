@@ -7,8 +7,6 @@ library Scale {
 
     // DecodeByteArray accepts a byte array representing a SCALE encoded byte array and performs SCALE decoding
     // of the byte array
-    // if the encoding is valid, it then returns the decoded byte array, the total number of input bytes decoded, and nil
-    // otherwise, it returns 0
     function decodeByteArray(Input.Data memory data)
         internal
         pure
@@ -22,10 +20,7 @@ library Scale {
         return v;
     }
 
-    // DecodeInteger accepts a byte array representing a SCALE encoded integer and performs SCALE decoding of the int
-    // if the encoding is valid, it then returns (o, bytesDecoded, err) where o is the decoded integer, bytesDecoded is the
-    // number of input bytes decoded, and err is nil
-    // otherwise, it returns 0
+    // decodeU32 accepts a byte array representing a SCALE encoded integer and performs SCALE decoding of the int
     function decodeU32(Input.Data memory data) internal pure returns (uint32) {
         uint8 b0 = data.decodeU8();
         uint8 mode = b0 & 3;
@@ -50,8 +45,6 @@ library Scale {
 
     // encodeByteArray performs the following:
     // b -> [encodeInteger(len(b)) b]
-    // it writes to t.lengthhe buffer a byte array where the first byte is the length of b encoded with SCALE, followed by the
-    // byte array b itself
     function encodeByteArray(bytes memory src)
         internal
         pure
@@ -63,7 +56,7 @@ library Scale {
         des = abi.encodePacked(des, src);
     }
 
-    // encodeInteger performs the following on integer i:
+    // encodeU32 performs the following on integer i:
     // i  -> i^0...i^n where n is the length in bits of i
     // note that the bit representation of i is in little endian; ie i^0 is the least significant bit of i,
     // and i^n is the most significant bit

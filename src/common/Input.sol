@@ -5,9 +5,6 @@ import "./Bytes.sol";
 library Input {
     using Bytes for bytes;
 
-    // Size of a word, in bytes.
-    uint256 internal constant WORD_SIZE = 32;
-
     struct Data {
         uint256 offset;
         bytes raw;

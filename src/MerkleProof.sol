@@ -38,6 +38,10 @@ contract MerkleProof {
     using Bytes for bytes;
     using Input for Input.Data;
 
+    uint8 internal constant NODEKIND_NOEXT_LEAF = 1;
+    uint8 internal constant NODEKIND_NOEXT_BRANCH_NOVALUE = 2;
+    uint8 internal constant NODEKIND_NOEXT_BRANCH_WITHVALUE = 3;
+
     struct StackEntry {
         bytes prefix; // The prefix is the nibble path to the node in the trie.
         uint8 kind; // The type of the trie node.
@@ -67,11 +71,11 @@ contract MerkleProof {
 
     enum Step {Descend, UnwindStack}
 
-    /**
+	/**
      * @dev Returns true if `keys ans values` can be proved to be a part of a Merkle tree
-     * defined by `root`. For this, a `proof` must be provided, containing
-     * sibling hashes on the branch from the leaf to the root of the tree. Each
-     * pair of leaves and each pair of pre-images are assumed to be sorted.
+     * defined by `root`. For this, a `proof` must be provided, is a sequence of the subset 
+     * of nodes in the trie traversed while performing lookups on all keys. The trie nodes 
+     * are listed in pre-order traversal order with some values and internal hashes omitted.
      */
     function verify(
         bytes32 root,
@@ -165,8 +169,8 @@ contract MerkleProof {
         ProofIter memory proofIter
     ) internal pure returns (StackEntry memory) {
         if (
-            entry.kind == Node.NODEKIND_NOEXT_BRANCH_NOVALUE ||
-            entry.kind == Node.NODEKIND_NOEXT_BRANCH_WITHVALUE
+            entry.kind == NODEKIND_NOEXT_BRANCH_NOVALUE ||
+            entry.kind == NODEKIND_NOEXT_BRANCH_WITHVALUE
         ) {
             require(childPrefix.length > 0, "this is a branch");
             entry.childIndex = uint8(childPrefix[childPrefix.length - 1]);
@@ -246,7 +250,7 @@ contract MerkleProof {
         StackEntry memory entry
     ) internal pure returns (ValueMatch vm, bytes memory childPrefix) {
         uint256 prefixPlufPartialLen = prefixLen + entry.key.length;
-        if (entry.kind == Node.NODEKIND_NOEXT_LEAF) {
+        if (entry.kind == NODEKIND_NOEXT_LEAF) {
             if (
                 contains(k, entry.key, prefixLen) &&
                 k.length == prefixPlufPartialLen
@@ -260,8 +264,8 @@ contract MerkleProof {
                 return (ValueMatch.NotFound, childPrefix);
             }
         } else if (
-            entry.kind == Node.NODEKIND_NOEXT_BRANCH_NOVALUE ||
-            entry.kind == Node.NODEKIND_NOEXT_BRANCH_WITHVALUE
+            entry.kind == NODEKIND_NOEXT_BRANCH_NOVALUE ||
+            entry.kind == NODEKIND_NOEXT_BRANCH_WITHVALUE
         ) {
             if (contains(k, entry.key, prefixLen)) {
                 if (prefixPlufPartialLen == k.length) {
@@ -331,15 +335,15 @@ contract MerkleProof {
         view
         returns (bytes memory)
     {
-        if (entry.kind == Node.NODEKIND_NOEXT_LEAF) {
+        if (entry.kind == NODEKIND_NOEXT_LEAF) {
             Node.Leaf memory l = Node.Leaf({
                 key: entry.key,
                 value: entry.value
             });
             return Node.encodeLeaf(l);
         } else if (
-            entry.kind == Node.NODEKIND_NOEXT_BRANCH_NOVALUE ||
-            entry.kind == Node.NODEKIND_NOEXT_BRANCH_WITHVALUE
+            entry.kind == NODEKIND_NOEXT_BRANCH_NOVALUE ||
+            entry.kind == NODEKIND_NOEXT_BRANCH_WITHVALUE
         ) {
             Node.Branch memory b = Node.Branch({
                 key: entry.key,
@@ -358,7 +362,7 @@ contract MerkleProof {
      *      NodeHeader | Extra partial key length | Partial Key | Value
      * @param nodeData The encoded trie node data.
      * @param prefix The nibble path to the node.
-     * @param isInine The node is an in-line node or not.
+     * @param isInline The node is an in-line node or not.
      * @return The stackEntry.
      */
     function decodeNode(
@@ -369,7 +373,7 @@ contract MerkleProof {
         Input.Data memory data = Input.from(nodeData);
         uint8 header = data.decodeU8();
         uint8 kind = header >> 6;
-        if (kind == Node.NODEKIND_NOEXT_LEAF) {
+        if (kind == NODEKIND_NOEXT_LEAF) {
             //Leaf
             Node.Leaf memory leaf = Node.decodeLeaf(data, header);
             entry.key = leaf.key;
@@ -378,8 +382,8 @@ contract MerkleProof {
             entry.prefix = prefix;
             entry.isInline = isInline;
         } else if (
-            kind == Node.NODEKIND_NOEXT_BRANCH_NOVALUE ||
-            kind == Node.NODEKIND_NOEXT_BRANCH_WITHVALUE
+            kind == NODEKIND_NOEXT_BRANCH_NOVALUE ||
+            kind == NODEKIND_NOEXT_BRANCH_WITHVALUE
         ) {
             //BRANCH_WITHOUT_MASK_NO_EXT  BRANCH_WITH_MASK_NO_EXT
             Node.Branch memory branch = Node.decodeBranch(data, header);
