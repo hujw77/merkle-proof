@@ -112,9 +112,7 @@ contract CompactMerkleProofTest is CompactMerkleProof, DSTest {
     }
 
     function test_decode_branch() public {
-
-            bytes memory proof
-         = hex"c10740001470757070798083809f19c0b956a97fc0175e6717d289bb0f890a67a953eb0874f89244314b34";
+		bytes memory proof = hex"c10740001470757070798083809f19c0b956a97fc0175e6717d289bb0f890a67a953eb0874f89244314b34";
         Input.Data memory data = Input.from(proof);
         uint8 header = data.decodeU8();
         Node.Branch memory b = Node.decodeBranch(data, header);
@@ -124,9 +122,7 @@ contract CompactMerkleProofTest is CompactMerkleProof, DSTest {
     }
 
     function test_encode_branch() public {
-
-            bytes memory proof
-         = hex"c10740001470757070798083809f19c0b956a97fc0175e6717d289bb0f890a67a953eb0874f89244314b34";
+		bytes memory proof  = hex"c10740001470757070798083809f19c0b956a97fc0175e6717d289bb0f890a67a953eb0874f89244314b34";
         Input.Data memory data = Input.from(proof);
         uint8 header = data.decodeU8();
         Node.Branch memory b = Node.decodeBranch(data, header);
