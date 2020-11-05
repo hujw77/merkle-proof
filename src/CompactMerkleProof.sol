@@ -34,7 +34,7 @@ import "./common/Node.sol";
 /**
  * @dev Verification of compact proofs for Modified Merkle-Patricia tries.
  */
-contract MerkleProof {
+contract CompactMerkleProof {
     using Bytes for bytes;
     using Input for Input.Data;
 
